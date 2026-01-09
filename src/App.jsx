@@ -20,17 +20,17 @@ function App() {
 
   const initializeApp = async () => {
     try {
-      // Check browser support
+      // Check browser support (no GPU required!)
       const support = await checkBrowserSupport();
 
-      if (!support.webgpu || !support.indexeddb) {
+      if (!support.indexeddb || !support.wasm) {
         setError(support.reason);
         setStatus('error');
         setLoadStage(`Error: ${support.reason}`);
         return;
       }
 
-      // Initialize BERI (browser-based)
+      // Initialize BERI (CPU-based, works on any computer!)
       await initBERI((progress) => {
         setLoadProgress(progress.progress);
         setLoadStage(progress.stage);
@@ -129,7 +129,8 @@ function App() {
             </h1>
             <p className="text-textMuted mb-4">{error}</p>
             <p className="text-sm text-textMuted">
-              Please ensure you are using Chrome 113+ or Edge 113+ with WebGPU enabled.
+              Please use a modern browser (Chrome, Firefox, Edge, or Safari).
+              No GPU required - runs on CPU!
             </p>
             <button
               onClick={() => window.location.reload()}

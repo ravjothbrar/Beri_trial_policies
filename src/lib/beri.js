@@ -75,12 +75,12 @@ export async function askBERI(query, onToken) {
 }
 
 /**
- * Check if the browser supports required features
+ * Check if the browser supports required features (CPU-based, no GPU required!)
  */
 export async function checkBrowserSupport() {
   const support = {
-    webgpu: false,
     indexeddb: false,
+    wasm: false,
     reason: ''
   };
 
@@ -91,23 +91,12 @@ export async function checkBrowserSupport() {
   }
   support.indexeddb = true;
 
-  // Check WebGPU
-  if (!navigator.gpu) {
-    support.reason = 'WebGPU not available. Please use Chrome 113+ or Edge 113+';
+  // Check WebAssembly (required for CPU inference)
+  if (typeof WebAssembly === 'undefined') {
+    support.reason = 'WebAssembly not supported. Please use a modern browser.';
     return support;
   }
-
-  try {
-    const adapter = await navigator.gpu.requestAdapter();
-    if (!adapter) {
-      support.reason = 'No GPU adapter found';
-      return support;
-    }
-    support.webgpu = true;
-  } catch (error) {
-    support.reason = `WebGPU error: ${error.message}`;
-    return support;
-  }
+  support.wasm = true;
 
   return support;
 }
