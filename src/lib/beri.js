@@ -1,8 +1,9 @@
-import { initEmbeddings } from './embeddings';
+import { initEmbeddings, embed } from './embeddings';
 import { initLLM, generateResponse } from './llm';
-import { initStorage, loadPolicies } from './storage';
+import { initStorage, loadPolicies, storeChunk } from './storage';
 import { retrieveContext, formatContext } from './retrieval';
 import { BERI_SYSTEM_PROMPT } from './systemPrompt';
+import { processPDF } from './pdfProcessor';
 
 /**
  * Initialize BERI system with all required components
@@ -109,4 +110,57 @@ export async function checkBrowserSupport() {
   }
 
   return support;
+}
+
+/**
+ * Upload and process a PDF file (client-side)
+ * @param {File} file - The PDF file to upload
+ * @param {Function} onProgress - Progress callback
+ * @returns {Promise<{chunks: number, filename: string}>}
+ */
+export async function uploadPDF(file, onProgress) {
+  try {
+    // Step 1: Extract and chunk the PDF
+    onProgress?.({ stage: 'Extracting text from PDF...', progress: 10 });
+    const { chunks, filename } = await processPDF(file);
+
+    onProgress?.({ stage: 'Generating embeddings...', progress: 40 });
+
+    // Step 2: Generate embeddings for each chunk
+    const totalChunks = chunks.length;
+    for (let i = 0; i < chunks.length; i++) {
+      const chunk = chunks[i];
+
+      // Generate embedding
+      const embedding = await embed(chunk);
+
+      // Store in IndexedDB
+      await storeChunk({
+        text: chunk,
+        embedding: embedding,
+        metadata: {
+          source: filename,
+          section: `Chunk ${i + 1}`,
+          page: Math.floor(i / 3) // Approximate page number
+        }
+      });
+
+      // Update progress
+      const progress = 40 + (i / totalChunks) * 50;
+      onProgress?.({
+        stage: `Processing chunk ${i + 1}/${totalChunks}...`,
+        progress
+      });
+    }
+
+    onProgress?.({ stage: 'Complete!', progress: 100 });
+
+    return {
+      chunks: totalChunks,
+      filename
+    };
+  } catch (error) {
+    console.error('Error uploading PDF:', error);
+    throw error;
+  }
 }

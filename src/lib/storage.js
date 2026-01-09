@@ -103,6 +103,33 @@ export async function getChunksBySource(source) {
   return await index.getAll(source);
 }
 
+export async function storeChunk(chunkData) {
+  if (!db) {
+    await initStorage();
+  }
+
+  const id = `chunk_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+  const tx = db.transaction(['chunks', 'embeddings'], 'readwrite');
+
+  // Store chunk
+  await tx.objectStore('chunks').put({
+    id,
+    content: chunkData.text,
+    metadata: chunkData.metadata
+  });
+
+  // Store embedding
+  await tx.objectStore('embeddings').put({
+    id,
+    embedding: chunkData.embedding
+  });
+
+  await tx.done;
+
+  return id;
+}
+
 export async function clearDatabase() {
   if (!db) {
     await initStorage();

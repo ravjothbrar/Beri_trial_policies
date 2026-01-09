@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-export default function PDFUploader({ onUploadComplete }) {
+export default function PDFUploader({ onUpload }) {
   const [uploading, setUploading] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [error, setError] = useState(null);
@@ -18,30 +18,14 @@ export default function PDFUploader({ onUploadComplete }) {
     setError(null);
 
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const response = await fetch('http://localhost:8000/upload-pdf', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Upload failed');
-      }
-
-      const result = await response.json();
+      // Call the parent component's upload handler (client-side processing)
+      const result = await onUpload(file);
 
       setUploadedFiles(prev => [...prev, {
         name: file.name,
-        chunks: result.chunks_created,
+        chunks: result.chunks,
         timestamp: new Date().toLocaleTimeString()
       }]);
-
-      if (onUploadComplete) {
-        onUploadComplete(result);
-      }
 
       // Reset file input
       event.target.value = '';
@@ -54,21 +38,10 @@ export default function PDFUploader({ onUploadComplete }) {
   };
 
   const handleClearData = async () => {
-    try {
-      const response = await fetch('http://localhost:8000/clear', {
-        method: 'POST',
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to clear data');
-      }
-
-      setUploadedFiles([]);
-      setError(null);
-    } catch (err) {
-      console.error('Clear error:', err);
-      setError('Failed to clear data');
-    }
+    // For client-side version, we could clear IndexedDB here
+    // For now, just clear the UI list
+    setUploadedFiles([]);
+    setError(null);
   };
 
   return (

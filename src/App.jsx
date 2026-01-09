@@ -4,8 +4,7 @@ import LoadingScreen from './components/LoadingScreen';
 import ChatContainer from './components/ChatContainer';
 import InputArea from './components/InputArea';
 import PDFUploader from './components/PDFUploader';
-import { checkBackendHealth, queryPolicies, generateResponse } from './lib/api';
-import { initLLM } from './lib/llm';
+import { initBERI, askBERI, checkBrowserSupport, uploadPDF } from './lib/beri';
 
 function App() {
   const [status, setStatus] = useState('loading'); // loading, ready, error
@@ -21,25 +20,22 @@ function App() {
 
   const initializeApp = async () => {
     try {
-      // Check backend health
-      setLoadStage('Connecting to backend server...');
-      setLoadProgress(10);
+      // Check browser support
+      const support = await checkBrowserSupport();
 
-      const health = await checkBackendHealth();
-      if (!health.model_loaded) {
-        throw new Error('Backend model not loaded');
+      if (!support.webgpu || !support.indexeddb) {
+        setError(support.reason);
+        setStatus('error');
+        setLoadStage(`Error: ${support.reason}`);
+        return;
       }
 
-      // Initialize local LLM for response generation
-      setLoadStage('Loading language model...');
-      setLoadProgress(50);
-
-      await initLLM((progress) => {
-        setLoadProgress(50 + (progress.progress * 0.5));
+      // Initialize BERI (browser-based)
+      await initBERI((progress) => {
+        setLoadProgress(progress.progress);
         setLoadStage(progress.stage);
       });
 
-      setLoadProgress(100);
       setStatus('ready');
     } catch (err) {
       console.error('Initialization error:', err);
@@ -76,13 +72,9 @@ function App() {
     setMessages((prev) => [...prev, assistantMessage]);
 
     try {
-      // Step 1: Query backend for relevant chunks
-      const retrievalResult = await queryPolicies(query);
-
-      // Step 2: Generate response using local LLM with context
-      await generateResponse(
+      // Query BERI with streaming
+      await askBERI(
         query,
-        retrievalResult.chunks,
         (token) => {
           // Stream tokens
           assistantContent += token;
@@ -151,9 +143,17 @@ function App() {
     );
   }
 
-  const handleUploadComplete = (result) => {
-    console.log('Upload complete:', result);
-    // Optionally show a notification or update UI
+  const handlePDFUpload = async (file) => {
+    try {
+      const result = await uploadPDF(file, (progress) => {
+        console.log('Upload progress:', progress);
+      });
+      console.log('Upload complete:', result);
+      return result;
+    } catch (error) {
+      console.error('Upload error:', error);
+      throw error;
+    }
   };
 
   return (
@@ -161,7 +161,7 @@ function App() {
       <Header status={status} />
       <div className="flex-1 overflow-y-auto bg-background">
         <div className="container mx-auto px-4 py-6">
-          <PDFUploader onUploadComplete={handleUploadComplete} />
+          <PDFUploader onUpload={handlePDFUpload} />
           <ChatContainer messages={messages} isStreaming={isStreaming} />
         </div>
       </div>
