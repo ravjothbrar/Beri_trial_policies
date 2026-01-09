@@ -21,10 +21,30 @@ export default function Header({ status }) {
   return (
     <header className="bg-primary text-white shadow-md">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="text-2xl font-bold">🎓 BERI</div>
-          <div className="hidden sm:block text-sm opacity-90">
-            Habs Policy Assistant
+        <div className="flex items-center gap-4">
+          {/* Beri Logo */}
+          <div className="flex items-center gap-2">
+            <img
+              src="/images/beri-logo.png"
+              alt="BERI Logo"
+              className="h-10 w-auto"
+              onError={(e) => {
+                e.target.style.display = 'none';
+                e.target.nextElementSibling.style.display = 'block';
+              }}
+            />
+            <div className="text-2xl font-bold" style={{ display: 'none' }}>🎓 BERI</div>
+          </div>
+
+          {/* Divider */}
+          <div className="hidden sm:block h-8 w-px bg-white opacity-30"></div>
+
+          {/* Habs Branding */}
+          <div className="flex items-center gap-2">
+            <div className="hidden sm:flex flex-col">
+              <span className="text-sm font-semibold">Haberdashers'</span>
+              <span className="text-xs opacity-90">Policy Assistant</span>
+            </div>
           </div>
         </div>
         <StatusIndicator status={status} />

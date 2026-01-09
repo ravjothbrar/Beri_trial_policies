@@ -3,7 +3,9 @@ import Header from './components/Header';
 import LoadingScreen from './components/LoadingScreen';
 import ChatContainer from './components/ChatContainer';
 import InputArea from './components/InputArea';
-import { initBERI, askBERI, checkBrowserSupport } from './lib/beri';
+import PDFUploader from './components/PDFUploader';
+import { checkBackendHealth, queryPolicies, generateResponse } from './lib/api';
+import { initLLM } from './lib/llm';
 
 function App() {
   const [status, setStatus] = useState('loading'); // loading, ready, error
@@ -19,22 +21,25 @@ function App() {
 
   const initializeApp = async () => {
     try {
-      // Check browser support
-      const support = await checkBrowserSupport();
+      // Check backend health
+      setLoadStage('Connecting to backend server...');
+      setLoadProgress(10);
 
-      if (!support.webgpu || !support.indexeddb) {
-        setError(support.reason);
-        setStatus('error');
-        setLoadStage(`Error: ${support.reason}`);
-        return;
+      const health = await checkBackendHealth();
+      if (!health.model_loaded) {
+        throw new Error('Backend model not loaded');
       }
 
-      // Initialize BERI
-      await initBERI((progress) => {
-        setLoadProgress(progress.progress);
+      // Initialize local LLM for response generation
+      setLoadStage('Loading language model...');
+      setLoadProgress(50);
+
+      await initLLM((progress) => {
+        setLoadProgress(50 + (progress.progress * 0.5));
         setLoadStage(progress.stage);
       });
 
+      setLoadProgress(100);
       setStatus('ready');
     } catch (err) {
       console.error('Initialization error:', err);
@@ -71,8 +76,13 @@ function App() {
     setMessages((prev) => [...prev, assistantMessage]);
 
     try {
-      await askBERI(
+      // Step 1: Query backend for relevant chunks
+      const retrievalResult = await queryPolicies(query);
+
+      // Step 2: Generate response using local LLM with context
+      await generateResponse(
         query,
+        retrievalResult.chunks,
         (token) => {
           // Stream tokens
           assistantContent += token;
@@ -141,10 +151,20 @@ function App() {
     );
   }
 
+  const handleUploadComplete = (result) => {
+    console.log('Upload complete:', result);
+    // Optionally show a notification or update UI
+  };
+
   return (
     <div className="flex flex-col h-screen">
       <Header status={status} />
-      <ChatContainer messages={messages} isStreaming={isStreaming} />
+      <div className="flex-1 overflow-y-auto bg-background">
+        <div className="container mx-auto px-4 py-6">
+          <PDFUploader onUploadComplete={handleUploadComplete} />
+          <ChatContainer messages={messages} isStreaming={isStreaming} />
+        </div>
+      </div>
       <InputArea
         onSubmit={handleSubmit}
         disabled={status !== 'ready'}
