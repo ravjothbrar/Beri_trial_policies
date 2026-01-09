@@ -1,6 +1,6 @@
 # BERI 🎓 - Bespoke Education Retrieval Infrastructure
 
-**BERI** is a fully browser-based, privacy-first RAG (Retrieval-Augmented Generation) system designed for Haberdashers' Elstree Schools. It enables students and staff to query school policies and educational materials using a local LLM, with **zero server dependencies** and **complete offline functionality**.
+**BERI** is a privacy-first RAG (Retrieval-Augmented Generation) system designed for Haberdashers' Elstree Schools. It enables students and staff to query school policies and educational materials using advanced AI, combining a **Python backend with sentence-transformers** for embeddings and a **browser-based LLM** for response generation.
 
 ## 🎯 Project Overview
 
@@ -8,45 +8,74 @@
 BERI is a student-led initiative by Énora Hauduc and Ravjoth Brar, designed to provide a custom AI assistant trained on Habs' internal resources. This demo serves as a proof-of-concept using school policy documents.
 
 ### Core Principles
-- **100% Private**: All data stays on the user's device - no external API calls
-- **Offline-First**: Works without WiFi once assets are cached
-- **No Backend**: Purely static frontend application
+- **Privacy-First**: PDF documents processed locally, no external API calls
+- **Hybrid Architecture**: Python backend for embeddings, browser LLM for generation
+- **Dynamic Document Upload**: Upload any PDF policy document on the fly
 - **RAG Architecture**: Reduces hallucinations by grounding responses in actual documents
 - **British Context**: Uses British English spelling and UK educational terminology
+- **Production-Ready**: Scalable backend with FastAPI and sentence-transformers
 
-### Demo Scope
-This proof-of-concept demonstrates BERI's capabilities using 4 Habs policy documents:
-1. **E-Safety Policy** - Online safety guidelines and procedures
-2. **Data Protection Policy** - GDPR compliance and data handling
-3. **Acceptable Use Policy - Students** - IT usage rules and responsibilities
-4. **Academic Integrity Policy** - Plagiarism, AI use, and academic honesty
+### Key Features
+- **PDF Upload**: Drag-and-drop any policy document for instant processing
+- **Intelligent Chunking**: Automatic text segmentation with overlap for context
+- **Semantic Search**: sentence-transformers embeddings for accurate retrieval
+- **Source Attribution**: All responses cite specific policy sections
+- **Real-time Streaming**: Token-by-token response generation
+- **Dual Branding**: Integrated Beri and Haberdashers' visual identity
 
 ---
 
 ## 🏗️ System Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│                        BERI Browser Application                      │
-├─────────────────────────────────────────────────────────────────────┤
-│  ┌───────────────┐    ┌──────────────┐    ┌───────────────────────┐ │
-│  │   UI Layer    │    │  RAG Engine  │    │   Local LLM Layer     │ │
-│  │   (React)     │◄──►│  (JS/TS)     │◄──►│   (WebLLM/WebGPU)     │ │
-│  └───────────────┘    └──────────────┘    └───────────────────────┘ │
-│          │                   │                       │              │
-│          ▼                   ▼                       ▼              │
-│  ┌───────────────┐    ┌──────────────┐    ┌───────────────────────┐ │
-│  │  Tailwind CSS │    │  Embeddings  │    │  Qwen2.5-0.5B-Instruct│ │
-│  │  Styling      │    │  (MiniLM-L6) │    │  (~360MB cached)      │ │
-│  └───────────────┘    └──────────────┘    └───────────────────────┘ │
+┌──────────────────────────────────────────────────────────────────────┐
+│                         BERI Frontend (React)                        │
+│  ┌────────────────┐  ┌──────────────┐  ┌─────────────────────────┐  │
+│  │   UI Layer     │  │ PDF Uploader │  │  Chat Interface         │  │
+│  │  (Tailwind)    │  │  Component   │  │  (Streaming Tokens)     │  │
+│  └────────────────┘  └──────────────┘  └─────────────────────────┘  │
+│           │                  │                      │                │
+│           └──────────────────┼──────────────────────┘                │
+│                              │                                       │
+│                              ▼                                       │
+│                    ┌──────────────────┐                              │
+│                    │   WebLLM Layer   │                              │
+│                    │ Qwen2.5 (Local)  │                              │
+│                    │  (~360MB cache)  │                              │
+│                    └──────────────────┘                              │
+└──────────────────────────┬───────────────────────────────────────────┘
+                           │ HTTP/REST API
+                           │ (localhost:8000)
+┌──────────────────────────▼───────────────────────────────────────────┐
+│                    BERI Backend (Python/FastAPI)                     │
+│  ┌─────────────────┐  ┌──────────────────┐  ┌───────────────────┐   │
+│  │  PDF Processing │  │   Chunking       │  │  Semantic Search  │   │
+│  │   (PyPDF2)      │─►│  (500 chars)     │─►│ (Cosine Similarity│   │
+│  └─────────────────┘  └──────────────────┘  └───────────────────┘   │
+│                              │                       │               │
+│                              ▼                       │               │
+│                    ┌──────────────────┐             │               │
+│                    │ sentence-        │◄────────────┘               │
+│                    │ transformers     │                             │
+│                    │ all-MiniLM-L6-v2 │                             │
+│                    │ (384-dim vectors)│                             │
+│                    └──────────────────┘                             │
 │                              │                                       │
 │                              ▼                                       │
 │                    ┌──────────────────┐                             │
-│                    │    IndexedDB     │                             │
-│                    │  (Chunk Storage) │                             │
+│                    │  In-Memory Store │                             │
+│                    │ Chunks + Vectors │                             │
 │                    └──────────────────┘                             │
-└─────────────────────────────────────────────────────────────────────┘
+└──────────────────────────────────────────────────────────────────────┘
 ```
+
+### Data Flow
+
+1. **Upload**: User uploads PDF → Backend extracts text → Chunks with overlap
+2. **Embed**: sentence-transformers generates 384-dim embeddings → Stored in memory
+3. **Query**: User asks question → Backend finds top-4 relevant chunks → Returns to frontend
+4. **Generate**: Frontend sends chunks + query → Local LLM generates response → Streams tokens
+5. **Display**: Response shown with source citations
 
 ---
 
@@ -54,10 +83,15 @@ This proof-of-concept demonstrates BERI's capabilities using 4 Habs policy docum
 
 ### Prerequisites
 
+#### Software Requirements
+- **Node.js** v18.0.0 or higher ([Download](https://nodejs.org/))
+- **Python** 3.9 or higher ([Download](https://www.python.org/))
+- **pip** (comes with Python)
+
 #### Hardware Requirements
-- **GPU**: WebGPU-compatible graphics card recommended
+- **GPU**: WebGPU-compatible graphics card recommended (for browser LLM)
 - **RAM**: Minimum 4GB available
-- **Storage**: ~500MB for cached models
+- **Storage**: ~2GB (models + dependencies)
 
 #### Browser Support
 | Browser | Status | Notes |
@@ -69,34 +103,66 @@ This proof-of-concept demonstrates BERI's capabilities using 4 Habs policy docum
 
 ### Installation
 
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd Beri_trial_policies
-   ```
+#### Step 1: Clone and Setup Frontend
 
-2. **Install dependencies**
-   ```bash
-   npm install --ignore-scripts
-   ```
+```bash
+git clone <repository-url>
+cd Beri_trial_policies
+npm install
+```
 
-   > **Note**: We use `--ignore-scripts` to avoid issues with optional dependencies. The required packages will still install correctly.
+#### Step 2: Setup Python Backend
 
-3. **Run the development server**
-   ```bash
-   npm run dev
-   ```
+```bash
+cd backend
 
-4. **Open in browser**
-   Navigate to `http://localhost:5173` in Chrome 113+ or Edge 113+
+# Create virtual environment (recommended)
+python3 -m venv venv
+
+# Activate virtual environment
+# On macOS/Linux:
+source venv/bin/activate
+# On Windows:
+venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
+```
+
+#### Step 3: Add Beri Logo (Optional)
+
+Save your Beri logo to `public/images/beri-logo.png`. See [LOGO_INSTRUCTIONS.md](LOGO_INSTRUCTIONS.md) for details.
+
+### Running the Application
+
+**You need TWO terminal windows:**
+
+**Terminal 1 - Backend Server:**
+```bash
+cd backend
+source venv/bin/activate  # Windows: venv\Scripts\activate
+python main.py
+```
+Backend will run on `http://localhost:8000`
+
+**Terminal 2 - Frontend Dev Server:**
+```bash
+npm run dev
+```
+Frontend will run on `http://localhost:5173`
+
+**Open Browser:**
+Navigate to `http://localhost:5173` in Chrome 113+ or Edge 113+
 
 ### First Launch
 
 On first launch, BERI will:
-1. Check browser compatibility (WebGPU and IndexedDB)
-2. Load the embedding model (~22MB download, cached)
-3. Load the local LLM (~360MB download, cached)
-4. Index policy documents into IndexedDB
+1. Connect to backend server (port 8000)
+2. Load sentence-transformers model on backend (~400MB, one-time)
+3. Load browser LLM (~360MB download, cached)
+4. Display upload interface for PDF documents
+
+**For complete setup instructions, see [SETUP_GUIDE.md](SETUP_GUIDE.md)**
 
 **This initial download takes 2-5 minutes** depending on your connection. Subsequent visits will load instantly from cache.
 
