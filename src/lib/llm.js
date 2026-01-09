@@ -12,7 +12,7 @@ export async function initLLM(onProgress) {
   try {
     generator = await pipeline(
       'text-generation',
-      'Xenova/Qwen2-0.5B-Instruct',
+      'Xenova/distilgpt2',
       {
         progress_callback: (progress) => {
           if (progress.status === 'progress' && onProgress) {
