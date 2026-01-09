@@ -14,20 +14,16 @@ export async function initBERI(onProgress) {
     onProgress({ stage: 'Initialising storage...', progress: 10 });
     await initStorage();
 
-    // Step 2: Load pre-embedded policies into IndexedDB
-    onProgress({ stage: 'Loading policy database...', progress: 20 });
-    await loadPolicies();
-
-    // Step 3: Initialize embedding model
-    onProgress({ stage: 'Loading embedding model (~22MB)...', progress: 30 });
+    // Step 2: Initialize embedding model
+    onProgress({ stage: 'Loading embedding model...', progress: 30 });
     await initEmbeddings();
 
-    // Step 4: Initialize LLM
-    onProgress({ stage: 'Loading AI model (~360MB)...', progress: 50 });
+    // Step 3: Initialize LLM
+    onProgress({ stage: 'Loading AI model...', progress: 50 });
     await initLLM((p) => {
       onProgress({
-        stage: `Loading AI model... ${Math.round(p * 100)}%`,
-        progress: 50 + p * 40
+        stage: p.stage || 'Loading AI model...',
+        progress: 50 + (p.progress || 0) * 0.4
       });
     });
 
