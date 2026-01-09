@@ -25,10 +25,15 @@ export async function extractTextFromPDF(file) {
       const page = await pdf.getPage(pageNum);
       const textContent = await page.getTextContent();
       const pageText = textContent.items.map(item => item.str).join(' ');
-      fullText += pageText + '\n';
+      fullText += pageText + ' ';
     }
 
-    return fullText;
+    // Validate we got some text
+    if (!fullText || fullText.trim().length === 0) {
+      throw new Error('No text could be extracted from this PDF. It may be a scanned image or empty document.');
+    }
+
+    return fullText.trim();
   } catch (error) {
     console.error('Error extracting PDF text:', error);
     throw new Error(`Failed to extract text from PDF: ${error.message}`);
@@ -43,14 +48,24 @@ export async function extractTextFromPDF(file) {
  * @returns {Array<string>} - Array of text chunks
  */
 export function chunkText(text, chunkSize = 500, overlap = 50) {
+  // Validate input
+  if (!text || typeof text !== 'string') {
+    return [];
+  }
+
   // Clean the text
   text = text.replace(/\s+/g, ' ').trim();
+
+  // If text is very short, return it as a single chunk
+  if (text.length <= chunkSize) {
+    return [text];
+  }
 
   const chunks = [];
   let start = 0;
 
   while (start < text.length) {
-    let end = start + chunkSize;
+    let end = Math.min(start + chunkSize, text.length);
 
     // Try to break at sentence boundary
     if (end < text.length) {
@@ -65,7 +80,13 @@ export function chunkText(text, chunkSize = 500, overlap = 50) {
       chunks.push(chunk);
     }
 
+    // Move to next chunk with overlap
     start = end - overlap;
+
+    // Safety check: prevent infinite loop
+    if (start >= text.length || chunks.length > 10000) {
+      break;
+    }
   }
 
   return chunks;
@@ -77,12 +98,24 @@ export function chunkText(text, chunkSize = 500, overlap = 50) {
  * @returns {Promise<{chunks: Array<string>, filename: string}>}
  */
 export async function processPDF(file) {
-  const text = await extractTextFromPDF(file);
-  const chunks = chunkText(text);
+  try {
+    const text = await extractTextFromPDF(file);
+    const chunks = chunkText(text);
 
-  return {
-    chunks,
-    filename: file.name,
-    totalChunks: chunks.length
-  };
+    // Validate we got some chunks
+    if (!chunks || chunks.length === 0) {
+      throw new Error('Failed to create chunks from PDF text');
+    }
+
+    console.log(`PDF processed: ${chunks.length} chunks created from ${file.name}`);
+
+    return {
+      chunks,
+      filename: file.name,
+      totalChunks: chunks.length
+    };
+  } catch (error) {
+    console.error('Error processing PDF:', error);
+    throw error;
+  }
 }
