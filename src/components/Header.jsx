@@ -25,7 +25,7 @@ export default function Header({ status }) {
           {/* Beri Logo */}
           <div className="flex items-center gap-2">
             <img
-              src="/images/beri-logo.png"
+              src={`${import.meta.env.BASE_URL}images/beri-logo.png`}
               alt="BERI Logo"
               className="h-10 w-auto"
               onError={(e) => {

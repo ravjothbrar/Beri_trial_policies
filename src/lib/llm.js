@@ -52,46 +52,45 @@ export async function generateResponse(systemPrompt, context, query, onToken) {
   }
 
   try {
-    // Qwen2.5 uses chat format for better instruction following
-    const messages = [
-      {
-        role: "system",
-        content: "You are a helpful assistant answering questions about school policies. Always quote exact phrases from the provided context to support your answers."
-      },
-      {
-        role: "user",
-        content: `Context from policy documents:\n\n${context}\n\nQuestion: ${query}\n\nPlease provide a comprehensive answer that quotes relevant passages from the context above.`
-      }
-    ];
+    // Qwen2.5 needs a properly formatted prompt string, not messages array
+    const prompt = `<|im_start|>system
+You are a helpful assistant answering questions about school policies. Always quote exact phrases from the provided context to support your answers.<|im_end|>
+<|im_start|>user
+Context from policy documents:
+
+${context}
+
+Question: ${query}
+
+Please provide a comprehensive answer that quotes relevant passages from the context above.<|im_end|>
+<|im_start|>assistant
+`;
 
     console.log('Generating response with context length:', context.length);
     console.log('Context being used:', context.substring(0, 500) + '...');
 
-    const output = await generator(messages, {
-      max_new_tokens: 800,
+    const output = await generator(prompt, {
+      max_new_tokens: 512,
       temperature: 0.7,
       do_sample: true,
       top_k: 50,
       top_p: 0.95,
-      repetition_penalty: 1.3,
+      repetition_penalty: 1.2,
     });
 
-    // Extract the generated text from output
+    // Extract the generated text (everything after the prompt)
     let answer = '';
     if (output && output.length > 0 && output[0].generated_text) {
-      // For chat format, the response is in the last message
-      const generated = output[0].generated_text;
-      if (Array.isArray(generated)) {
-        // If it's an array of messages, get the last assistant message
-        const lastMessage = generated[generated.length - 1];
-        answer = typeof lastMessage === 'string' ? lastMessage : (lastMessage.content || '');
-      } else if (typeof generated === 'string') {
-        answer = generated;
-      }
-      answer = answer.trim();
+      const fullText = output[0].generated_text;
+      // Remove the prompt to get just the assistant's response
+      answer = fullText.replace(prompt, '').trim();
+
+      // Remove any trailing end tokens
+      answer = answer.replace(/<\|im_end\|>.*$/s, '').trim();
     }
 
     console.log('Generated answer:', answer);
+    console.log('Answer length:', answer.length);
 
     // Only stream if we have a valid answer that's a string
     if (answer && typeof answer === 'string' && answer.length > 0) {
@@ -103,7 +102,7 @@ export async function generateResponse(systemPrompt, context, query, onToken) {
         await new Promise(resolve => setTimeout(resolve, 30));
       }
     } else {
-      console.warn('Model generated empty or invalid response:', typeof answer, answer);
+      console.warn('Model generated empty or invalid response');
     }
 
     return answer || '';
