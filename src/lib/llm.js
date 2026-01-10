@@ -12,7 +12,7 @@ export async function initLLM(onProgress) {
   try {
     generator = await pipeline(
       'text2text-generation',
-      'Xenova/flan-t5-large',
+      'Xenova/flan-t5-base',
       {
         progress_callback: (progress) => {
           if (progress.status === 'progress' && onProgress) {
@@ -53,18 +53,18 @@ export async function generateResponse(systemPrompt, context, query, onToken) {
 
   try {
     // Flan-T5 works best with clear, structured prompts
-    const prompt = `Answer the following question using ONLY the information from the context below. Quote specific phrases from the context in your answer.
+    const prompt = `You are a helpful assistant answering questions about school policies.
 
-Context from policy documents:
+Context:
 ${context}
 
-Question: ${query}
+Based on the context above, answer this question: ${query}
 
-Instructions:
-- Provide a detailed answer using information from the context
-- Quote exact phrases from the context when possible
-- Be specific and comprehensive
-- If the context doesn't fully answer the question, say so
+Provide a comprehensive answer that:
+1. Directly quotes relevant passages from the context
+2. Explains the policy clearly
+3. Uses specific details from the documents
+4. Mentions which document the information comes from
 
 Answer:`;
 
@@ -72,12 +72,12 @@ Answer:`;
     console.log('Context being used:', context.substring(0, 500) + '...');
 
     const output = await generator(prompt, {
-      max_new_tokens: 500,
-      temperature: 0.5,
+      max_new_tokens: 800,
+      temperature: 0.7,
       do_sample: true,
       top_k: 50,
       top_p: 0.95,
-      repetition_penalty: 1.2,
+      repetition_penalty: 1.3,
     });
 
     // Flan-T5 returns the answer directly (text2text-generation)
