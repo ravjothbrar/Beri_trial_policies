@@ -7,12 +7,12 @@ export async function initLLM(onProgress) {
     return generator;
   }
 
-  console.log('Loading LFM2 RAG-optimized model (CPU-based, no GPU required)...');
+  console.log('Loading Qwen2.5 model (CPU-based, no GPU required)...');
 
   try {
     generator = await pipeline(
       'text-generation',
-      'onnx-community/LFM2-1.2B-RAG-ONNX',
+      'onnx-community/Qwen2.5-0.5B-Instruct',
       {
         progress_callback: (progress) => {
           if (progress.status === 'progress' && onProgress) {
@@ -52,26 +52,22 @@ export async function generateResponse(systemPrompt, context, query, onToken) {
   }
 
   try {
-    // LFM2 works best with clear, structured prompts optimized for RAG
-    const prompt = `You are a helpful assistant answering questions about school policies.
-
-Context:
-${context}
-
-Question: ${query}
-
-Instructions:
-- Provide a comprehensive answer using the context above
-- Quote exact phrases from the context to support your answer
-- Be specific and detailed
-- Mention which document the information comes from
-
-Answer:`;
+    // Qwen2.5 uses chat format for better instruction following
+    const messages = [
+      {
+        role: "system",
+        content: "You are a helpful assistant answering questions about school policies. Always quote exact phrases from the provided context to support your answers."
+      },
+      {
+        role: "user",
+        content: `Context from policy documents:\n\n${context}\n\nQuestion: ${query}\n\nPlease provide a comprehensive answer that quotes relevant passages from the context above.`
+      }
+    ];
 
     console.log('Generating response with context length:', context.length);
     console.log('Context being used:', context.substring(0, 500) + '...');
 
-    const output = await generator(prompt, {
+    const output = await generator(messages, {
       max_new_tokens: 800,
       temperature: 0.7,
       do_sample: true,
@@ -80,18 +76,25 @@ Answer:`;
       repetition_penalty: 1.3,
     });
 
-    // LFM2 (text-generation) returns full text including prompt, so extract only the answer
-    let fullText = output && output[0] && output[0].generated_text
-      ? output[0].generated_text
-      : '';
-
-    // Remove the prompt to get just the answer
-    const answer = fullText.replace(prompt, '').trim();
+    // Extract the generated text from output
+    let answer = '';
+    if (output && output.length > 0 && output[0].generated_text) {
+      // For chat format, the response is in the last message
+      const generated = output[0].generated_text;
+      if (Array.isArray(generated)) {
+        // If it's an array of messages, get the last assistant message
+        const lastMessage = generated[generated.length - 1];
+        answer = typeof lastMessage === 'string' ? lastMessage : (lastMessage.content || '');
+      } else if (typeof generated === 'string') {
+        answer = generated;
+      }
+      answer = answer.trim();
+    }
 
     console.log('Generated answer:', answer);
 
-    // Only stream if we have a valid answer
-    if (answer && answer.length > 0) {
+    // Only stream if we have a valid answer that's a string
+    if (answer && typeof answer === 'string' && answer.length > 0) {
       // Stream tokens word by word for better UX
       const words = answer.split(' ');
       for (let i = 0; i < words.length; i++) {
@@ -100,10 +103,10 @@ Answer:`;
         await new Promise(resolve => setTimeout(resolve, 30));
       }
     } else {
-      console.warn('Model generated empty response');
+      console.warn('Model generated empty or invalid response:', typeof answer, answer);
     }
 
-    return answer;
+    return answer || '';
   } catch (error) {
     console.error('Error generating response:', error);
     throw error;
