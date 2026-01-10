@@ -7,7 +7,7 @@ export default function LoadingScreen({ progress, stage }) {
         <div className="bg-white rounded-lg shadow-lg p-8">
           <div className="text-center mb-6">
             <div className="text-4xl mb-4">🎓</div>
-            <h1 className="text-2xl font-bold text-primary mb-2">
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent mb-2">
               Initialising BERI
             </h1>
             <p className="text-textMuted text-sm">
@@ -18,7 +18,7 @@ export default function LoadingScreen({ progress, stage }) {
           <div className="mb-4">
             <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
               <div
-                className="bg-primary h-full rounded-full transition-all duration-300 ease-out"
+                className="bg-gradient-to-r from-primary via-accent to-secondary h-full rounded-full transition-all duration-300 ease-out"
                 style={{ width: `${progress}%` }}
               ></div>
             </div>

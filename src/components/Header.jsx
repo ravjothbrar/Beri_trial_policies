@@ -19,7 +19,7 @@ const StatusIndicator = ({ status }) => {
 
 export default function Header({ status }) {
   return (
-    <header className="bg-primary text-white shadow-md">
+    <header className="bg-gradient-to-r from-primary via-accent to-secondary text-white shadow-lg">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
         <div className="flex items-center gap-4">
           {/* Beri Logo */}

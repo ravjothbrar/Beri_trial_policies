@@ -52,7 +52,7 @@ export default function PDFUploader({ onUpload }) {
   return (
     <div className="bg-white rounded-lg shadow-md p-6 mb-6">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-text">Upload Policy Documents</h2>
+        <h2 className="text-lg font-semibold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Upload Policy Documents</h2>
         {uploadedFiles.length > 0 && (
           <button
             onClick={handleClearData}
