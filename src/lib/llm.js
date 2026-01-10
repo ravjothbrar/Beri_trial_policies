@@ -7,12 +7,12 @@ export async function initLLM(onProgress) {
     return generator;
   }
 
-  console.log('Loading LiquidAI LFM2-1.2B RAG model (CPU-based, no GPU required)...');
+  console.log('Loading Qwen2.5-0.5B-Instruct model (CPU-based, no GPU required)...');
 
   try {
     generator = await pipeline(
       'text-generation',
-      'onnx-community/LFM2-1.2B-RAG-ONNX',
+      'onnx-community/Qwen2.5-0.5B-Instruct',
       {
         progress_callback: (progress) => {
           if (progress.status === 'progress' && onProgress) {
