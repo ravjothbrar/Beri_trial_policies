@@ -68,10 +68,11 @@ export async function retrieveContext(query, k = 4) {
  */
 export function formatContext(chunks) {
   return chunks
-    .map(chunk => {
+    .map((chunk, index) => {
       const source = chunk.metadata.source;
       const section = chunk.metadata.section ? ` - ${chunk.metadata.section}` : '';
-      return `[${source}${section}]\n${chunk.content}`;
+      return `Source ${index + 1}: ${source}${section}
+Content: ${chunk.content}`;
     })
     .join('\n\n---\n\n');
 }

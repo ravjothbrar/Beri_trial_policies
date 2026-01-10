@@ -47,7 +47,7 @@ export async function extractTextFromPDF(file) {
  * @param {number} overlap - Overlap between chunks
  * @returns {Array<string>} - Array of text chunks
  */
-export function chunkText(text, chunkSize = 500, overlap = 50) {
+export function chunkText(text, chunkSize = 1000, overlap = 100) {
   // Validate input
   if (!text || typeof text !== 'string') {
     return [];
@@ -70,25 +70,27 @@ export function chunkText(text, chunkSize = 500, overlap = 50) {
     // Try to break at sentence boundary
     if (end < text.length) {
       const sentenceEnd = text.lastIndexOf('. ', end);
-      if (sentenceEnd > start) {
+      if (sentenceEnd > start + chunkSize * 0.5) {
         end = sentenceEnd + 1;
       }
     }
 
     const chunk = text.substring(start, end).trim();
-    if (chunk.length > 0) {
+    if (chunk.length > 50) { // Only add substantial chunks
       chunks.push(chunk);
     }
 
     // Move to next chunk with overlap
     start = end - overlap;
 
-    // Safety check: prevent infinite loop
-    if (start >= text.length || chunks.length > 10000) {
+    // Safety check: prevent infinite loop and limit chunks
+    if (chunks.length >= 1000) {
+      console.warn('Reached maximum chunk limit of 1000');
       break;
     }
   }
 
+  console.log(`Created ${chunks.length} chunks from ${text.length} characters`);
   return chunks;
 }
 
