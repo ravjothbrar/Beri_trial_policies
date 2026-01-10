@@ -84,8 +84,8 @@ export function chunkText(text, chunkSize = 1000, overlap = 100) {
     start = end - overlap;
 
     // Safety check: prevent infinite loop and limit chunks
-    if (chunks.length >= 1000) {
-      console.warn('Reached maximum chunk limit of 1000');
+    if (chunks.length >= 500) {
+      console.warn('Reached maximum chunk limit of 500');
       break;
     }
   }

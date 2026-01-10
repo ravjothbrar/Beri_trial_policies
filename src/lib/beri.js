@@ -61,7 +61,8 @@ export async function askBERI(query, onToken) {
       sources: contextChunks.map(c => ({
         source: c.metadata.source,
         section: c.metadata.section,
-        relevance: c.score
+        score: c.score,
+        text: c.content
       }))
     };
   } catch (error) {

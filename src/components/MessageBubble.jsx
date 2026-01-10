@@ -26,18 +26,26 @@ export default function MessageBubble({ message }) {
         </div>
 
         {message.sources && message.sources.length > 0 && (
-          <div className="mt-3 pt-3 border-t border-gray-200">
-            <p className="text-xs font-semibold text-textMuted mb-1">Sources:</p>
-            <div className="flex flex-wrap gap-2">
+          <div className="mt-4 pt-3 border-t border-gray-200">
+            <p className="text-xs font-semibold text-textMuted mb-2">Sources:</p>
+            <div className="space-y-2">
               {message.sources.map((source, idx) => (
-                <span
+                <div
                   key={idx}
-                  className="text-xs bg-gray-100 text-textMuted px-2 py-1 rounded"
-                  title={`Relevance: ${(source.relevance * 100).toFixed(1)}%`}
+                  className="text-xs bg-gray-50 p-3 rounded border border-gray-200"
                 >
-                  {source.source}
-                  {source.section && ` - ${source.section}`}
-                </span>
+                  <div className="font-semibold text-primary mb-1">
+                    {source.source} {source.section && `- ${source.section}`}
+                    <span className="text-textMuted font-normal ml-2">
+                      (Relevance: {(source.score * 100).toFixed(0)}%)
+                    </span>
+                  </div>
+                  {source.text && (
+                    <div className="text-textMuted italic mt-1 line-clamp-3">
+                      "{source.text.substring(0, 200)}..."
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
           </div>

@@ -53,22 +53,27 @@ export async function generateResponse(systemPrompt, context, query, onToken) {
 
   try {
     // Flan-T5 works best with clear, structured prompts
-    const prompt = `You are a helpful assistant answering questions about school policies.
+    const prompt = `Answer the following question using ONLY the information from the context below. Quote specific phrases from the context in your answer.
 
 Context from policy documents:
 ${context}
 
 Question: ${query}
 
-Provide a detailed, comprehensive answer based only on the context provided. Include specific details and cite relevant policy sections. If the context doesn't contain enough information, say so.
+Instructions:
+- Provide a detailed answer using information from the context
+- Quote exact phrases from the context when possible
+- Be specific and comprehensive
+- If the context doesn't fully answer the question, say so
 
 Answer:`;
 
     console.log('Generating response with context length:', context.length);
+    console.log('Context being used:', context.substring(0, 500) + '...');
 
     const output = await generator(prompt, {
       max_new_tokens: 500,
-      temperature: 0.8,
+      temperature: 0.2,
       do_sample: true,
       top_k: 50,
       top_p: 0.95,
