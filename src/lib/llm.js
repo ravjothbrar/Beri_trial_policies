@@ -7,12 +7,12 @@ export async function initLLM(onProgress) {
     return generator;
   }
 
-  console.log('Loading text generation model (CPU-based, no GPU required)...');
+  console.log('Loading LFM2 RAG-optimized model (CPU-based, no GPU required)...');
 
   try {
     generator = await pipeline(
-      'text2text-generation',
-      'Xenova/flan-t5-base',
+      'text-generation',
+      'onnx-community/LFM2-1.2B-RAG-ONNX',
       {
         progress_callback: (progress) => {
           if (progress.status === 'progress' && onProgress) {
@@ -52,19 +52,19 @@ export async function generateResponse(systemPrompt, context, query, onToken) {
   }
 
   try {
-    // Flan-T5 works best with clear, structured prompts
+    // LFM2 works best with clear, structured prompts optimized for RAG
     const prompt = `You are a helpful assistant answering questions about school policies.
 
 Context:
 ${context}
 
-Based on the context above, answer this question: ${query}
+Question: ${query}
 
-Provide a comprehensive answer that:
-1. Directly quotes relevant passages from the context
-2. Explains the policy clearly
-3. Uses specific details from the documents
-4. Mentions which document the information comes from
+Instructions:
+- Provide a comprehensive answer using the context above
+- Quote exact phrases from the context to support your answer
+- Be specific and detailed
+- Mention which document the information comes from
 
 Answer:`;
 
@@ -80,10 +80,13 @@ Answer:`;
       repetition_penalty: 1.3,
     });
 
-    // Flan-T5 returns the answer directly (text2text-generation)
-    const answer = output && output[0] && output[0].generated_text
-      ? output[0].generated_text.trim()
+    // LFM2 (text-generation) returns full text including prompt, so extract only the answer
+    let fullText = output && output[0] && output[0].generated_text
+      ? output[0].generated_text
       : '';
+
+    // Remove the prompt to get just the answer
+    const answer = fullText.replace(prompt, '').trim();
 
     console.log('Generated answer:', answer);
 
