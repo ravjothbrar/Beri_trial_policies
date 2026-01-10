@@ -41,8 +41,8 @@ export default function MessageBubble({ message }) {
                     </span>
                   </div>
                   {source.text && (
-                    <div className="text-textMuted italic mt-1 line-clamp-3">
-                      "{source.text.substring(0, 200)}..."
+                    <div className="text-textMuted italic mt-1">
+                      "{source.text.substring(0, 500)}{source.text.length > 500 ? '...' : ''}"
                     </div>
                   )}
                 </div>

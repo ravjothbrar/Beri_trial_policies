@@ -6,11 +6,13 @@ export default function PDFUploader({ onUpload }) {
   const [error, setError] = useState(null);
 
   const handleFileUpload = async (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
+    const files = Array.from(event.target.files);
+    if (!files || files.length === 0) return;
 
-    if (!file.name.endsWith('.pdf')) {
-      setError('Please upload a PDF file');
+    // Validate all files are PDFs
+    const nonPdfFiles = files.filter(file => !file.name.endsWith('.pdf'));
+    if (nonPdfFiles.length > 0) {
+      setError('Please upload only PDF files');
       return;
     }
 
@@ -18,14 +20,17 @@ export default function PDFUploader({ onUpload }) {
     setError(null);
 
     try {
-      // Call the parent component's upload handler (client-side processing)
-      const result = await onUpload(file);
+      // Process all files
+      for (const file of files) {
+        // Call the parent component's upload handler (client-side processing)
+        const result = await onUpload(file);
 
-      setUploadedFiles(prev => [...prev, {
-        name: file.name,
-        chunks: result.chunks,
-        timestamp: new Date().toLocaleTimeString()
-      }]);
+        setUploadedFiles(prev => [...prev, {
+          name: file.name,
+          chunks: result.chunks,
+          timestamp: new Date().toLocaleTimeString()
+        }]);
+      }
 
       // Reset file input
       event.target.value = '';
@@ -81,7 +86,7 @@ export default function PDFUploader({ onUpload }) {
             <p className="mb-2 text-sm text-gray-500">
               <span className="font-semibold">Click to upload</span> or drag and drop
             </p>
-            <p className="text-xs text-gray-500">PDF documents only</p>
+            <p className="text-xs text-gray-500">PDF documents only (multiple files supported)</p>
           </div>
           <input
             id="pdf-upload"
@@ -90,6 +95,7 @@ export default function PDFUploader({ onUpload }) {
             accept=".pdf"
             onChange={handleFileUpload}
             disabled={uploading}
+            multiple
           />
         </label>
       </div>
@@ -98,7 +104,7 @@ export default function PDFUploader({ onUpload }) {
       {uploading && (
         <div className="flex items-center gap-2 text-sm text-primary mb-4">
           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-          <span>Processing PDF...</span>
+          <span>Processing PDF(s)...</span>
         </div>
       )}
 

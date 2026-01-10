@@ -73,7 +73,7 @@ Answer:`;
 
     const output = await generator(prompt, {
       max_new_tokens: 500,
-      temperature: 0.2,
+      temperature: 0.5,
       do_sample: true,
       top_k: 50,
       top_p: 0.95,
@@ -81,16 +81,23 @@ Answer:`;
     });
 
     // Flan-T5 returns the answer directly (text2text-generation)
-    const answer = output[0].generated_text.trim();
+    const answer = output && output[0] && output[0].generated_text
+      ? output[0].generated_text.trim()
+      : '';
 
     console.log('Generated answer:', answer);
 
-    // Stream tokens word by word for better UX
-    const words = answer.split(' ');
-    for (let i = 0; i < words.length; i++) {
-      const word = i === 0 ? words[i] : ' ' + words[i];
-      onToken(word);
-      await new Promise(resolve => setTimeout(resolve, 30));
+    // Only stream if we have a valid answer
+    if (answer && answer.length > 0) {
+      // Stream tokens word by word for better UX
+      const words = answer.split(' ');
+      for (let i = 0; i < words.length; i++) {
+        const word = i === 0 ? words[i] : ' ' + words[i];
+        onToken(word);
+        await new Promise(resolve => setTimeout(resolve, 30));
+      }
+    } else {
+      console.warn('Model generated empty response');
     }
 
     return answer;

@@ -55,9 +55,23 @@ export async function askBERI(query, onToken) {
       onToken
     );
 
+    // Check if response is empty and provide fallback
+    let finalResponse = response;
+    if (!response || response.trim().length === 0) {
+      const fallbackMessage = "I apologize, but I was unable to generate a response. Based on the context I found, the relevant information is in the sources below. Please review the source excerpts for details related to your question.";
+      finalResponse = fallbackMessage;
+      // Stream the fallback message
+      const words = fallbackMessage.split(' ');
+      for (let i = 0; i < words.length; i++) {
+        const word = i === 0 ? words[i] : ' ' + words[i];
+        onToken(word);
+        await new Promise(resolve => setTimeout(resolve, 30));
+      }
+    }
+
     // Return response with source information
     return {
-      response,
+      response: finalResponse,
       sources: contextChunks.map(c => ({
         source: c.metadata.source,
         section: c.metadata.section,
