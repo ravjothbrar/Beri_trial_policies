@@ -174,7 +174,7 @@ Then enable GitHub Pages:
 
 Your site will be available at:
 ```
-https://rimico2099.github.io/Beri_trial_policies/
+https://ravjothbrar.github.io/Beri_trial_policies/
 ```
 
 ⏱️ **First deployment takes 2-5 minutes**
@@ -401,7 +401,7 @@ For private repos: Requires GitHub Pro ($4/month)
 | URL | Purpose |
 |-----|---------|
 | `http://localhost:5173` | Local development |
-| `https://rimico2099.github.io/Beri_trial_policies/` | Production site |
+| `https://ravjothbrar.github.io/Beri_trial_policies/` | Production site |
 
 ---
 
